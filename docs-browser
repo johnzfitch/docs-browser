@@ -17,7 +17,8 @@ DOCS_BASE="${DOCS_BROWSER_PATH:-/usr/share/docs-browser/wikis}"
 declare -A ARCHIVES=(
     ["omarchy"]="${DOCS_BASE}/omarchy-wiki"
     ["hyprland"]="${DOCS_BASE}/hyprland-wiki"
-    ["ghostty"]="${DOCS_BASE}/ghostty-wiki"
+    # Uncomment to enable additional wikis:
+    # ["ghostty"]="${DOCS_BASE}/ghostty-wiki"
 )
 
 EDITOR="${EDITOR:-nvim}"
@@ -227,20 +228,16 @@ main_menu() {
         "Search All" \
         "Omarchy Wiki" \
         "Hyprland Wiki" \
-        "Ghostty Wiki" \
         "Browse Omarchy" \
-        "Browse Hyprland" \
-        "Browse Ghostty" | \
-        walker --dmenu -p "Docs Browser" --width 300 --maxheight 350)
+        "Browse Hyprland" | \
+        walker --dmenu -p "Docs Browser" --width 300 --maxheight 280)
 
     case "$choice" in
-        "Search All")      do_search omarchy hyprland ghostty ;;
+        "Search All")      do_search omarchy hyprland ;;
         "Omarchy Wiki")    do_search omarchy ;;
         "Hyprland Wiki")   do_search hyprland ;;
-        "Ghostty Wiki")    do_search ghostty ;;
         "Browse Omarchy")  browse_archive omarchy ;;
         "Browse Hyprland") browse_archive hyprland ;;
-        "Browse Ghostty")  browse_archive ghostty ;;
     esac
 }
 
@@ -251,11 +248,9 @@ main() {
     case "$mode" in
         omarchy)  do_search omarchy ;;
         hyprland) do_search hyprland ;;
-        ghostty)  do_search ghostty ;;
-        all)      do_search omarchy hyprland ghostty ;;
+        all)      do_search omarchy hyprland ;;
         browse-omarchy)  browse_archive omarchy ;;
         browse-hyprland) browse_archive hyprland ;;
-        browse-ghostty)  browse_archive ghostty ;;
         *)        main_menu ;;
     esac
 }

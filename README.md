@@ -97,11 +97,9 @@ Results sorted by score, limited to top 100.
 docs-browser              # Main menu
 docs-browser omarchy      # Search omarchy wiki only
 docs-browser hyprland     # Search hyprland wiki only
-docs-browser ghostty      # Search ghostty wiki only
 docs-browser all          # Search all archives directly
 docs-browser browse-omarchy   # Browse omarchy by category
 docs-browser browse-hyprland  # Browse hyprland by category
-docs-browser browse-ghostty   # Browse ghostty by category
 ```
 
 ## Dependencies
@@ -130,8 +128,8 @@ Desktop environment configuration, theming, keybindings, and workflow documentat
 ### Hyprland Wiki
 Official Hyprland documentation covering configuration, plugins, and Wayland compositor features.
 
-### Ghostty Wiki
-Configuration and usage documentation for [Ghostty](https://ghostty.org/), the fast GPU-accelerated terminal emulator.
+### Ghostty Wiki (optional)
+Configuration and usage documentation for [Ghostty](https://ghostty.org/), the fast GPU-accelerated terminal emulator. Included as an example - uncomment in script to enable.
 
 ## Design Constraints
 
