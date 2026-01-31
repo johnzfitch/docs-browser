@@ -11,9 +11,13 @@ if pgrep -f "walker.*--dmenu" &>/dev/null; then
 fi
 
 # Configuration
+# Default to system install path, override with DOCS_BROWSER_PATH env var
+DOCS_BASE="${DOCS_BROWSER_PATH:-/usr/share/docs-browser/wikis}"
+
 declare -A ARCHIVES=(
-    ["omarchy"]="/home/zack/dev/lib/omarchy-wiki"
-    ["hyprland"]="/home/zack/dev/lib/hyprland-wiki/content"
+    ["omarchy"]="${DOCS_BASE}/omarchy-wiki"
+    ["hyprland"]="${DOCS_BASE}/hyprland-wiki"
+    ["ghostty"]="${DOCS_BASE}/ghostty-wiki"
 )
 
 EDITOR="${EDITOR:-nvim}"
@@ -223,16 +227,20 @@ main_menu() {
         "Search All" \
         "Omarchy Wiki" \
         "Hyprland Wiki" \
+        "Ghostty Wiki" \
         "Browse Omarchy" \
-        "Browse Hyprland" | \
-        walker --dmenu -p "Docs Browser" --width 300 --maxheight 280)
+        "Browse Hyprland" \
+        "Browse Ghostty" | \
+        walker --dmenu -p "Docs Browser" --width 300 --maxheight 350)
 
     case "$choice" in
-        "Search All")      do_search omarchy hyprland ;;
+        "Search All")      do_search omarchy hyprland ghostty ;;
         "Omarchy Wiki")    do_search omarchy ;;
         "Hyprland Wiki")   do_search hyprland ;;
+        "Ghostty Wiki")    do_search ghostty ;;
         "Browse Omarchy")  browse_archive omarchy ;;
         "Browse Hyprland") browse_archive hyprland ;;
+        "Browse Ghostty")  browse_archive ghostty ;;
     esac
 }
 
@@ -243,9 +251,11 @@ main() {
     case "$mode" in
         omarchy)  do_search omarchy ;;
         hyprland) do_search hyprland ;;
-        all)      do_search omarchy hyprland ;;
+        ghostty)  do_search ghostty ;;
+        all)      do_search omarchy hyprland ghostty ;;
         browse-omarchy)  browse_archive omarchy ;;
         browse-hyprland) browse_archive hyprland ;;
+        browse-ghostty)  browse_archive ghostty ;;
         *)        main_menu ;;
     esac
 }

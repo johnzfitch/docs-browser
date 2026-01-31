@@ -6,18 +6,37 @@ Unified documentation browser for Hyprland-based Linux desktops. Search and brow
 
 **208 docs | 70K lines | instant search with relevance ranking**
 
-## Quickstart
+## Installation
+
+### AUR (Arch Linux)
 
 ```bash
-# 1. Copy the script
-sudo cp docs-browser /usr/local/bin/
-chmod +x /usr/local/bin/docs-browser
+yay -S docs-browser
+```
 
-# 2. Bind to a key (Hyprland)
+### Manual Install
+
+```bash
+# Clone the repo
+git clone https://github.com/johnzfitch/docs-browser.git
+cd docs-browser
+
+# Install script and wikis
+sudo install -Dm755 docs-browser /usr/bin/docs-browser
+sudo mkdir -p /usr/share/docs-browser
+sudo cp -r wikis /usr/share/docs-browser/
+
+# Bind to a key (Hyprland)
 # Add to ~/.config/hypr/bindings.conf:
-bindd = SUPER, H, Docs Browser, exec, /usr/local/bin/docs-browser
+bindd = SUPER, H, Docs Browser, exec, docs-browser
+```
 
-# 3. Run it
+### Custom Wiki Location
+
+Override the default path with `DOCS_BROWSER_PATH`:
+
+```bash
+export DOCS_BROWSER_PATH="$HOME/my-wikis"
 docs-browser
 ```
 
@@ -55,7 +74,7 @@ docs-browser
 | Feature | Description |
 |---------|-------------|
 | **Relevance ranking** | Filename matches > headings > line position > word boundaries |
-| **Multi-archive** | Search across Omarchy + Hyprland wikis simultaneously |
+| **Multi-archive** | Search across Omarchy + Hyprland + Ghostty wikis simultaneously |
 | **Toggle behavior** | Press Super+H again to dismiss (natural toggle) |
 | **Browse mode** | Navigate by category without searching |
 | **Action menu** | Open in editor, preview with bat, copy path/reference |
@@ -78,32 +97,28 @@ Results sorted by score, limited to top 100.
 docs-browser              # Main menu
 docs-browser omarchy      # Search omarchy wiki only
 docs-browser hyprland     # Search hyprland wiki only
+docs-browser ghostty      # Search ghostty wiki only
 docs-browser all          # Search all archives directly
 docs-browser browse-omarchy   # Browse omarchy by category
 docs-browser browse-hyprland  # Browse hyprland by category
+docs-browser browse-ghostty   # Browse ghostty by category
 ```
 
 ## Dependencies
 
+**Required:**
 - [Walker](https://github.com/abenz1267/walker) - Application launcher with dmenu mode
-- [Ghostty](https://ghostty.org/) or another terminal (configurable via `$TERMINAL`)
-- [bat](https://github.com/sharkdp/bat) - Syntax-highlighted preview (optional, falls back to less)
-- [wl-copy](https://github.com/bugaevc/wl-clipboard) - Wayland clipboard
-- [Hyprland](https://hyprland.org/) - Wayland compositor (for window tagging)
+- [wl-clipboard](https://github.com/bugaevc/wl-clipboard) - Wayland clipboard
+
+**Optional:**
+- [bat](https://github.com/sharkdp/bat) - Syntax-highlighted preview (falls back to less)
+- [Ghostty](https://ghostty.org/) - Default terminal (configurable via `$TERMINAL`)
+- [Hyprland](https://hyprland.org/) - Window tagging support
 
 ## Configuration
 
-Edit the `ARCHIVES` associative array in the script to add your own doc sources:
-
-```bash
-declare -A ARCHIVES=(
-    ["omarchy"]="/path/to/omarchy-wiki"
-    ["hyprland"]="/path/to/hyprland-wiki"
-    ["your-docs"]="/path/to/your/docs"
-)
-```
-
 Environment variables:
+- `$DOCS_BROWSER_PATH` - Wiki location (default: `/usr/share/docs-browser/wikis`)
 - `$EDITOR` - Editor for opening files (default: nvim)
 - `$TERMINAL` - Terminal emulator (default: ghostty)
 
@@ -130,7 +145,7 @@ Configuration and usage documentation for [Ghostty](https://ghostty.org/), the f
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | Walker not appearing | Walker not in PATH | Install walker, check `which walker` |
-| Results missing | Archive path wrong | Verify paths in `ARCHIVES` array exist |
+| Results missing | Archive path wrong | Check `$DOCS_BROWSER_PATH` points to wikis |
 | Editor not opening | Wrong terminal | Set `$TERMINAL` to your terminal |
 | Copy not working | wl-copy missing | Install wl-clipboard |
 
