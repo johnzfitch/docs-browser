@@ -4,7 +4,7 @@
 
 Unified documentation browser for Hyprland-based Linux desktops. Search and browse multiple doc archives from a single Walker-powered interface.
 
-**141 docs | 49K lines | instant search with relevance ranking**
+**208 docs | 70K lines | instant search with relevance ranking**
 
 ## Quickstart
 
@@ -114,6 +114,9 @@ Desktop environment configuration, theming, keybindings, and workflow documentat
 
 ### Hyprland Wiki
 Official Hyprland documentation covering configuration, plugins, and Wayland compositor features.
+
+### Ghostty Wiki
+Configuration and usage documentation for [Ghostty](https://ghostty.org/), the fast GPU-accelerated terminal emulator.
 
 ## Design Constraints
 
