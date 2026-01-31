@@ -1,0 +1,253 @@
+#!/bin/bash
+# Unified Documentation Browser
+# Searches multiple doc archives with walker integration
+
+set -euo pipefail
+
+# Toggle behavior - if walker dmenu is running, kill it and exit
+if pgrep -f "walker.*--dmenu" &>/dev/null; then
+    pkill -f "walker.*--dmenu" 2>/dev/null || true
+    exit 0
+fi
+
+# Configuration
+declare -A ARCHIVES=(
+    ["omarchy"]="/home/zack/dev/lib/omarchy-wiki"
+    ["hyprland"]="/home/zack/dev/lib/hyprland-wiki/content"
+)
+
+EDITOR="${EDITOR:-nvim}"
+TERMINAL="${TERMINAL:-ghostty}"
+
+# Search docs in specified archive(s)
+search_docs() {
+    local query="$1"
+    shift
+    local archives=("$@")
+
+    [[ -z "$query" ]] && return 0
+
+    set +e  # Disable exit on error for this function
+    for archive in "${archives[@]}"; do
+        local name path
+        name="$archive"
+        path="${ARCHIVES[$archive]}"
+
+        [[ ! -d "$path" ]] && continue
+
+        grep -rn --include="*.md" -i "$query" "$path" 2>/dev/null | \
+            sed "s|$path/||" | \
+            awk -v src="$name" -v q="$query" -F: '{
+                file=$1
+                line=$2
+                gsub(/\.md$/, "", file)
+                content=substr($0, index($0,$3))
+                gsub(/^[[:space:]]+/, "", content)
+                if (length(content) > 80) content=substr(content, 1, 77)"..."
+
+                # Enhanced relevance scoring
+                relevance=0
+                lf=tolower(file); lq=tolower(q); lc=tolower(content)
+
+                # Filename match (highest priority)
+                if (index(lf, lq) > 0) relevance += 100
+
+                # Position-based scoring (earlier = more relevant)
+                if (line <= 5) relevance += 30
+                else if (line <= 15) relevance += 15
+
+                # Heading match bonus
+                if (content ~ /^#+/) relevance += 20
+
+                # Exact word boundary match
+                if (match(lc, "\\<" lq "\\>")) relevance += 25
+
+                printf "%d\t[%s] %-35s │ L%-4s │ %s\n", relevance, src, file, line, content
+            }'
+    done | sort -t$'\t' -k1 -rn | head -100 | cut -f2-
+    set -e
+}
+
+# Handle file selection with action menu
+handle_selection() {
+    local selected="$1"
+
+    # Parse: [source] file │ Lnnn │ content
+    local source file line full_path
+    source=$(echo "$selected" | grep -oP '^\[\K[^\]]+')
+    file=$(echo "$selected" | sed 's/^\[[^]]*\] //' | awk -F'│' '{print $1}' | sed 's/[[:space:]]*$//')
+    line=$(echo "$selected" | awk -F'│' '{print $2}' | grep -oP '\d+')
+    full_path="${ARCHIVES[$source]}/${file}.md"
+
+    [[ ! -f "$full_path" ]] && { notify-send "Docs Browser" "File not found" -u critical; return 1; }
+
+    local action
+    action=$(printf '%s\n' \
+        "Open in Editor (L$line)" \
+        "Preview with bat" \
+        "Copy path" \
+        "Open directory" \
+        "Copy reference" | \
+        walker --dmenu -p "Action" --width 400 --maxheight 220)
+
+    case "$action" in
+        "Open in Editor"*)
+            $TERMINAL --class=docs-browser-editor --title="Docs: ${file##*/}" \
+                -e bash -c "$EDITOR +${line:-1} \"$full_path\"" &
+            sleep 0.1
+            hyprctl dispatch tagwindow +docs-editor class:^docs-browser-editor$ &>/dev/null
+            ;;
+        "Preview"*)
+            if command -v bat &>/dev/null; then
+                $TERMINAL --class=docs-browser-preview --title="Preview: ${file##*/}" \
+                    -e bat --paging=always --style=numbers,header,grid \
+                         --line-range "$line": "$full_path" &
+            else
+                $TERMINAL --class=docs-browser-preview -e less +"$line" "$full_path" &
+            fi
+            sleep 0.1
+            hyprctl dispatch tagwindow +docs-preview class:^docs-browser-preview$ &>/dev/null
+            ;;
+        "Copy path")
+            echo -n "$full_path" | wl-copy
+            notify-send "Copied" "$full_path" -u low -t 2000
+            ;;
+        "Open directory")
+            nautilus "$(dirname "$full_path")" &
+            ;;
+        "Copy reference")
+            echo -n "${file}.md:${line}" | wl-copy
+            notify-send "Copied" "${file}.md:${line}" -u low -t 2000
+            ;;
+    esac
+}
+
+# Quick open a specific file (for browse mode)
+quick_open() {
+    local file="$1"
+    [[ ! -f "$file" ]] && { notify-send "Docs Browser" "File not found: $file" -u critical; return 1; }
+
+    local basename="${file##*/}"
+    basename="${basename%.md}"
+
+    local action
+    action=$(printf '%s\n' \
+        "Open in Editor" \
+        "Preview with bat" \
+        "Copy path" | \
+        walker --dmenu -p "$basename" --width 350 --maxheight 180)
+
+    case "$action" in
+        "Open in Editor")
+            $TERMINAL --class=docs-browser-editor --title="Docs: $basename" \
+                -e bash -c "$EDITOR \"$file\"" &
+            ;;
+        "Preview"*)
+            if command -v bat &>/dev/null; then
+                $TERMINAL --class=docs-browser-preview --title="Preview: $basename" \
+                    -e bat --paging=always --style=numbers,header,grid "$file" &
+            else
+                $TERMINAL --class=docs-browser-preview -e less "$file" &
+            fi
+            ;;
+        "Copy path")
+            echo -n "$file" | wl-copy
+            notify-send "Copied" "$file" -u low -t 2000
+            ;;
+    esac
+}
+
+# Browse categories in an archive
+browse_archive() {
+    local archive="$1"
+    local path="${ARCHIVES[$archive]}"
+
+    [[ ! -d "$path" ]] && { notify-send "Docs Browser" "Archive not found: $path" -u critical; return 1; }
+
+    # List directories (categories)
+    local categories
+    categories=$(find "$path" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)
+
+    local category
+    category=$(echo "$categories" | walker --dmenu -p "[$archive] Category" --width 350 --maxheight 400)
+
+    [[ -z "$category" ]] && return 0
+
+    # List files in category
+    local files
+    files=$(find "$path/$category" -name "*.md" -type f -exec basename {} .md \; | sort)
+
+    local selected
+    selected=$(echo "$files" | walker --dmenu -p "$category" --width 400 --maxheight 450)
+
+    [[ -n "$selected" ]] && quick_open "$path/$category/$selected.md"
+}
+
+# Search mode
+do_search() {
+    local archives=("$@")
+    local label
+
+    if [[ ${#archives[@]} -eq 1 ]]; then
+        label="${archives[0]}"
+    else
+        label="all docs"
+    fi
+
+    local query
+    query=$(echo "" | walker --dmenu -p "Search $label" --width 450)
+
+    [[ -z "$query" ]] && return 0
+
+    local results
+    results=$(search_docs "$query" "${archives[@]}")
+
+    if [[ -z "$results" ]]; then
+        notify-send "Docs Browser" "No results for: $query" -u normal -t 3000
+        return 0
+    fi
+
+    local count
+    count=$(echo "$results" | wc -l)
+
+    local selected
+    selected=$(echo "$results" | walker --dmenu -p "$count results" --width 1000 --maxheight 550)
+
+    [[ -n "$selected" ]] && handle_selection "$selected"
+}
+
+# Main menu
+main_menu() {
+    local choice
+    choice=$(printf '%s\n' \
+        "Search All" \
+        "Omarchy Wiki" \
+        "Hyprland Wiki" \
+        "Browse Omarchy" \
+        "Browse Hyprland" | \
+        walker --dmenu -p "Docs Browser" --width 300 --maxheight 280)
+
+    case "$choice" in
+        "Search All")      do_search omarchy hyprland ;;
+        "Omarchy Wiki")    do_search omarchy ;;
+        "Hyprland Wiki")   do_search hyprland ;;
+        "Browse Omarchy")  browse_archive omarchy ;;
+        "Browse Hyprland") browse_archive hyprland ;;
+    esac
+}
+
+# Entry point
+main() {
+    local mode="${1:-}"
+
+    case "$mode" in
+        omarchy)  do_search omarchy ;;
+        hyprland) do_search hyprland ;;
+        all)      do_search omarchy hyprland ;;
+        browse-omarchy)  browse_archive omarchy ;;
+        browse-hyprland) browse_archive hyprland ;;
+        *)        main_menu ;;
+    esac
+}
+
+main "$@" </dev/null

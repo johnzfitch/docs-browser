@@ -1,0 +1,6 @@
+[Resolve]
+DNS=127.0.0.1
+FallbackDNS=
+DNSSEC=no
+DNSStubListener=no
+Domains=~.

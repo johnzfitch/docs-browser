@@ -1,0 +1,50 @@
+🚀 SSH Optimization Starting - Sun Nov  2 19:42:47 PST 2025
+========================================
+
+📦 Creating backup of current configuration...
+📦 Creating SSH configuration backup...
+  • Backing up /etc/ssh/sshd_config...
+  • Backing up /etc/ssh/sshd_config.d/...
+  • Backing up network settings...
+
+✅ Backup created: /home/zack/dev/lib/omarchy-archive/08-utilities/ssh-backups/20251102_194247
+
+To restore, run:
+  /home/zack/dev/lib/omarchy-archive/08-utilities/ssh-backups/20251102_194247/restore.sh
+
+✅ Backup created: /home/zack/dev/lib/omarchy-archive/08-utilities/ssh-backups/20251102_194247
+
+📝 Installing optimized sshd config...
+  Source: ~/.local/share/sshd-performance.conf
+  Target: /etc/ssh/sshd_config.d/50-performance.conf
+  ✓ Config installed
+
+🌐 Optimizing network buffers...
+  Before:
+net.core.rmem_max = 212992
+net.core.wmem_max = 212992
+net.ipv4.tcp_window_scaling = 1
+net.core.rmem_max = 134217728
+net.core.wmem_max = 134217728
+net.ipv4.tcp_rmem = 4096 87380 67108864
+net.ipv4.tcp_wmem = 4096 65536 67108864
+net.ipv4.tcp_window_scaling = 1
+  ✓ Network buffers optimized (128MB max)
+
+  ✓ Config set to immutable (use 'sudo chattr -i' to unlock)
+
+🔄 Restarting SSH service...
+  ✓ SSH restarted
+
+✅ SSH optimizations applied!
+
+Performance improvements:
+  • Faster ciphers (chacha20)
+  • DNS lookups disabled
+  • Larger network buffers (128MB)
+  • Compression enabled
+
+📱 Connect: ssh zack@192.168.4.111
+
+📄 Full log: /home/zack/dev/lib/omarchy-archive/08-utilities/ssh-optimization-logs/optimization-20251102_194247.log
+🔄 To restore: /home/zack/dev/lib/omarchy-archive/08-utilities/ssh-backups/20251102_194247/restore.sh
